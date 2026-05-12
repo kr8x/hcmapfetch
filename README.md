@@ -46,7 +46,7 @@ The shell script `hcmapfetch.sh` is ready to use as-is — no installation requi
 | `Makefile` | Builds hcmapdemux using bundled zlib-hc |
 | `zlib-hc/` | Bundled HamClock zlib library |
 | `LICENSE` | MIT License |
-| `README.md~ | this file |
+| `README.md | this file |
 
 ---
 
@@ -105,7 +105,7 @@ Output:
 ### Examples
 
 ```bash
-# v4.22+ server, defaults (MUF, 3.60 MHz, 100W)
+# v4.22+ server, defaults (REL, 3.60 MHz, 100W)
 ./hcmapfetch.sh
 
 # v3.10 server
