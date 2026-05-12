@@ -9,8 +9,8 @@
 #   -p PORT       HamClock server port        (default: 8080)
 #   -u PATH       URL path for the map        (default: /get_maps.bin)
 #   -V VERSION    HamClock version to emulate: 4 (default) or 3
-#   -w WIDTH      Map pixel width  (required for version 3)
-#   -h HEIGHT     Map pixel height (required for version 3)
+#   -x WIDTH      Map pixel width  (required for version 3)
+#   -y HEIGHT     Map pixel height (required for version 3)
 #   -d FILE       Day   map output filename   (default: day_map.bmp)
 #   -n FILE       Night map output filename   (default: night_map.bmp)
 #   -b BINARY     Path to hcmapdemux binary   (default: ./hcmapdemux)
@@ -44,8 +44,8 @@ MODE="19"            # 19
 TXLAT="33.167"
 TXLNG="-96.917"
 WATTS="100"
-MAP_WIDTH="660"  # also passed to hcmapdemux -w
-MAP_HEIGHT="330" # also passed to hcmapdemux -h
+MAP_WIDTH="660"  # also passed to hcmapdemux -x
+MAP_HEIGHT="330" # also passed to hcmapdemux -y
 MHZ="3.60"
 TOA="3.0"
 REQ="REL"
@@ -142,13 +142,13 @@ done
 # ------------------------------------------------------------------ #
 if [[ ! -x "$DEMUX_BIN" ]]; then
     echo "error: hcmapdemux binary not found or not executable: $DEMUX_BIN"
-    echo "       Build with: gcc -O2 -o hcmapdemux hcmapdemux.c -lz"
+    echo "       Build with: make"
     exit 1
 fi
 
 if [[ "$HC_VERSION" == "3.10" ]]; then
     if [[ -z "$MAP_WIDTH" || -z "$MAP_HEIGHT" ]]; then
-        echo "error: -w WIDTH and -h HEIGHT are required for version 3"
+        echo "error: -x WIDTH and -y HEIGHT are required for version 3"
         usage
     fi
 fi
@@ -162,8 +162,8 @@ MODE="${MODE:-REL}"            # MUF | REL | TOA
 TXLAT="${TXLAT:-33.167}"
 TXLNG="${TXLNG:--96.917}"
 WATTS="${WATTS:-100}"
-MAP_WIDTH="${MAP_WIDTH:-660}"  # also passed to hcmapdemux -w
-MAP_HEIGHT="${MAP_HEIGHT:-330}" # also passed to hcmapdemux -h
+MAP_WIDTH="${MAP_WIDTH:-660}"  # also passed to hcmapdemux -x
+MAP_HEIGHT="${MAP_HEIGHT:-330}" # also passed to hcmapdemux -y
 MHZ="${MHZ:-3.60}"
 TOA="${TOA:-9.0}"
 
