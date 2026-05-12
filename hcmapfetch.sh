@@ -65,7 +65,7 @@ HC_PATH=$(printf \
 
 
 # ------------------------------------------------------------------ #
-#  Usage                                                              #
+#  Usage                                                             #
 # ------------------------------------------------------------------ #
 usage() {
     cat <<EOF
@@ -91,6 +91,7 @@ Options:
   -T TXLNG      TX longitude (default: $TXLNG)
   -w WATTS      WATTS (default: $WATTS)
   -f MHZ        MHz (default: $MHZ)
+          80M  3.6 40M  7.1 30M 10.1 20M 14.1 17M 18.1 15M 21.1 12M 24.9 10M 28.2
   -o TOA        Take Off Angle (default: $TOA)
   -r REQ        Map Request Type REL,TOA,MUF (defualt: REL)
   --help        Show this help
