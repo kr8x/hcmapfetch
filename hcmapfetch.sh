@@ -134,7 +134,7 @@ while [[ $# -gt 0 ]]; do
 		-f) MHZ="$2"; shift 2 ;;
 		-o) TOA="$2"; shift 2 ;;
 		-r) REQ="$2"; shift 2 ;;
-		-A) ARG="$2"; shirt 2 ;;
+		-A) ARG="$2"; shift 2 ;;
 
         --help) usage ;;
         *) echo "Unknown option: $1"; usage ;;
