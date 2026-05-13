@@ -97,6 +97,7 @@ Options:
   -o TOA        Take Off Angle (default: $TOA)
   -r REQ        Map Request Type REL,TOA,MUF (defualt: REL)
   -A ARG        Add argument to query if ARG is X=Y, Query is added &X=Y
+  -l CURL       save curl file and split into header CURL.txt body CURL.bin 
   --help        Show this help
 
 Examples:
@@ -135,6 +136,7 @@ while [[ $# -gt 0 ]]; do
 		-o) TOA="$2"; shift 2 ;;
 		-r) REQ="$2"; shift 2 ;;
 		-A) ARG="$2"; shift 2 ;;
+		-l) CURL="$2"; shift 2 ;;
 
         --help) usage ;;
         *) echo "Unknown option: $1"; usage ;;
@@ -229,9 +231,18 @@ echo "hcmapfetch: fetching $URL  (protocol v${HC_VERSION})"
 echo "hcmapfetch: day  -> $DAY_OUT"
 echo "hcmapfetch: night-> $NIGHT_OUT"
 echo ""
-
-curl "${CURL_ARGS[@]}" "$URL" | tee /tmp/hcmapfetch.raw | "$DEMUX_BIN" "${DEMUX_ARGS[@]}"
+TEMP=$(mktemp /tmp/hcmapfetch.XXXXXX)
+curl "${CURL_ARGS[@]}" "$URL" | tee $TEMP | "$DEMUX_BIN" "${DEMUX_ARGS[@]}"
 
 echo ""
 echo "hcmapfetch: complete"
 ls -lh "$DAY_OUT" "$NIGHT_OUT" 2>/dev/null || true
+
+if [[ -n "$CURL"  ]]; then
+    echo "spliting curl output"
+    cat $TEMP | ./splitcurl $CURL
+    cp $TEMP $CURL.raw
+	echo "created $CURL.raw $CURL.txt  $CURL.bin"
+fi
+
+rm $TEMP
