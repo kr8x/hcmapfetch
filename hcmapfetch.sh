@@ -14,6 +14,7 @@
 #   -d FILE       Day   map output filename   (default: day_map.bmp)
 #   -n FILE       Night map output filename   (default: night_map.bmp)
 #   -b BINARY     Path to hcmapdemux binary   (default: ./hcmapdemux)
+#   -A ARG        Add and argument to the Curl  X=Y becomes &X=Y 
 #   --help        Show this help
 
 set -euo pipefail
@@ -49,6 +50,7 @@ MAP_HEIGHT="330" # also passed to hcmapdemux -y
 MHZ="3.60"
 TOA="3.0"
 REQ="REL"
+ARG=""
 case "$REQ" in
     REL) VOACAPTYPE="Area" ;;
     TOA) VOACAPTYPE="-TOA" ;;
@@ -94,6 +96,7 @@ Options:
           80M  3.6 40M  7.1 30M 10.1 20M 14.1 17M 18.1 15M 21.1 12M 24.9 10M 28.2
   -o TOA        Take Off Angle (default: $TOA)
   -r REQ        Map Request Type REL,TOA,MUF (defualt: REL)
+  -A ARG        Add argument to query if ARG is X=Y, Query is added &X=Y
   --help        Show this help
 
 Examples:
@@ -131,6 +134,7 @@ while [[ $# -gt 0 ]]; do
 		-f) MHZ="$2"; shift 2 ;;
 		-o) TOA="$2"; shift 2 ;;
 		-r) REQ="$2"; shift 2 ;;
+		-A) ARG="$2"; shirt 2 ;;
 
         --help) usage ;;
         *) echo "Unknown option: $1"; usage ;;
@@ -184,13 +188,16 @@ case "$REQ" in
     MUF) VOACAPTYPE="-MUF" ;;
 esac
 
+#add parameter separator to $ARG if it has a value
+[ -n "$ARG" ] && ARG="&$ARG"
+
 # ------------------------------------------------------------------ #
 #  Build default URL for --help option                               #
 # ------------------------------------------------------------------ #
 HC_PATH=$(printf \
-    "/ham/HamClock/fetchVOACAP%s.pl?YEAR=%d&MONTH=%d&UTC=%d&TXLAT=%s&TXLNG=%s&PATH=0&WATTS=%s&WIDTH=%s&HEIGHT=%s&MHZ=%s&TOA=%s&MODE=%s" \
+    "/ham/HamClock/fetchVOACAP%s.pl?YEAR=%d&MONTH=%d&UTC=%d&TXLAT=%s&TXLNG=%s&PATH=0&WATTS=%s&WIDTH=%s&HEIGHT=%s&MHZ=%s&TOA=%s&MODE=%s%s" \
     "$VOACAPTYPE" "$YEAR" "$MONTH" "$HOUR" "$TXLAT" "$TXLNG" "$WATTS" \
-    "$MAP_WIDTH" "$MAP_HEIGHT" "$MHZ" "$TOA" "$MODE")
+    "$MAP_WIDTH" "$MAP_HEIGHT" "$MHZ" "$TOA" "$MODE" "$ARG")
 
 
 # ------------------------------------------------------------------ #
