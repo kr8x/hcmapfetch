@@ -5,17 +5,28 @@
 #   hcmapfetch.sh [options]
 #
 # Options:
-#   -s HOST       HamClock server host or IP  (default: hamclock.local)
-#   -p PORT       HamClock server port        (default: 8080)
-#   -u PATH       URL path for the map        (default: /get_maps.bin)
-#   -V VERSION    HamClock version to emulate: 4 (default) or 3
-#   -x WIDTH      Map pixel width  (required for version 3)
-#   -y HEIGHT     Map pixel height (required for version 3)
-#   -d FILE       Day   map output filename   (default: day_map.bmp)
-#   -n FILE       Night map output filename   (default: night_map.bmp)
-#   -b BINARY     Path to hcmapdemux binary   (default: ./hcmapdemux)
-#   -A ARG        Add and argument to the Curl  X=Y becomes &X=Y 
-#   --help        Show this help
+#  -s HOST       HamClock server host or IP
+#  -p PORT       HamClock server port
+#  -u PATH       URL path for the map
+#  -V VERSION    HamClock version: 4.22 (zlib, default) or 3.10 (raw BMP)
+#  -x WIDTH      Map pixel width  (required for -V 3) see valid x/y combinations
+#  -y HEIGHT     Map pixel height (required for -V 3) see valid x/y combinations
+#      660/330 1320/660 1980/990 2640/1320 3960/1980 5280/2640 5940/2970 7920x3960
+#  -d FILE       Day   map output
+#  -n FILE       Night map output
+#  -b BINARY     Path to folder containing hcmapdemux and splitcurl
+#  -m MODE       Mode for area map  (default: $MODE)
+#                CW 19 RTTY 22 SSB 38 AM 49 WSPR 3 FT8 13 FT4 17
+#  -t TXLAT      TX latitude (default: $TXLAT)
+#  -T TXLNG      TX longitude (default: $TXLNG)
+#  -w WATTS      WATTS (default: $WATTS)
+#  -f MHZ        MHz (default: $MHZ)
+#          80M  3.6 40M  7.1 30M 10.1 20M 14.1 17M 18.1 15M 21.1 12M 24.9 10M 28.2
+#  -o TOA        Take Off Angle (default: $TOA)
+#  -r REQ        Map Request Type REL,TOA,MUF (defualt: REL)
+#  -A ARG        Add argument to query if ARG is X=Y, Query is added &X=Y
+#  -l CURL       save curl file and split into reeived CURL.raw header CURL.txt body CURL.bin
+#  --help        show help
 
 set -euo pipefail
 
@@ -30,7 +41,9 @@ MAP_WIDTH="660"
 MAP_HEIGHT=""
 DAY_OUT="day_map.bmp"
 NIGHT_OUT="night_map.bmp"
-DEMUX_BIN="./hcmapdemux"
+BIN_DIR="."
+DEMUX_BIN="hcmapdemux"
+SPLIT_BIN="splitcurl"
 # ------------------------------------------------------------------ #
 #  Date/time — current UTC                                            #
 # ------------------------------------------------------------------ #
@@ -51,6 +64,7 @@ MHZ="3.60"
 TOA="3.0"
 REQ="REL"
 ARG=""
+CURL=""
 case "$REQ" in
     REL) VOACAPTYPE="Area" ;;
     TOA) VOACAPTYPE="-TOA" ;;
@@ -86,7 +100,7 @@ Options:
       660/330 1320/660 1980/990 2640/1320 3960/1980 5280/2640 5940/2970 7920x3960
   -d FILE       Day   map output            (default: $DAY_OUT)
   -n FILE       Night map output            (default: $NIGHT_OUT)
-  -b BINARY     Path to hcmapdemux          (default: $DEMUX_BIN)
+  -b BINARY     Path to folder containing #DEMUX_BIN and $SPLIT_BIN (default: $BIN_DIR)
   -m MODE       Mode for area map  (default: $MODE)
                 CW 19 RTTY 22 SSB 38 AM 49 SWPR 3 FT8 13 FT4 17
   -t TXLAT      TX latitude (default: $TXLAT)
@@ -97,7 +111,7 @@ Options:
   -o TOA        Take Off Angle (default: $TOA)
   -r REQ        Map Request Type REL,TOA,MUF (defualt: REL)
   -A ARG        Add argument to query if ARG is X=Y, Query is added &X=Y
-  -l CURL       save curl file and split into header CURL.txt body CURL.bin 
+  -l CURL       save curl file and split into reeived CURL.raw header CURL.txt body CURL.bin
   --help        Show this help
 
 Examples:
@@ -127,16 +141,16 @@ while [[ $# -gt 0 ]]; do
         -y) MAP_HEIGHT="$2"; shift 2 ;;
         -d) DAY_OUT="$2";   shift 2 ;;
         -n) NIGHT_OUT="$2"; shift 2 ;;
-        -b) DEMUX_BIN="$2"; shift 2 ;;
-		-m) MODE="$2"; shift 2 ;;
-		-t) TXLAT="$2"; shift 2 ;;
-		-T) TXLNG="$2"; shift 2 ;;
-		-w) WATTS="$2"; shift 2 ;;
-		-f) MHZ="$2"; shift 2 ;;
-		-o) TOA="$2"; shift 2 ;;
-		-r) REQ="$2"; shift 2 ;;
-		-A) ARG="$2"; shift 2 ;;
-		-l) CURL="$2"; shift 2 ;;
+        -b) BIN_DIR="$2"; shift 2 ;;
+        -m) MODE="$2"; shift 2 ;;
+        -t) TXLAT="$2"; shift 2 ;;
+        -T) TXLNG="$2"; shift 2 ;;
+        -w) WATTS="$2"; shift 2 ;;
+        -f) MHZ="$2"; shift 2 ;;
+        -o) TOA="$2"; shift 2 ;;
+        -r) REQ="$2"; shift 2 ;;
+        -A) ARG="$2"; shift 2 ;;
+        -l) CURL="$2"; shift 2 ;;
 
         --help) usage ;;
         *) echo "Unknown option: $1"; usage ;;
@@ -232,7 +246,7 @@ echo "hcmapfetch: day  -> $DAY_OUT"
 echo "hcmapfetch: night-> $NIGHT_OUT"
 echo ""
 TEMP=$(mktemp /tmp/hcmapfetch.XXXXXX)
-curl "${CURL_ARGS[@]}" "$URL" | tee $TEMP | "$DEMUX_BIN" "${DEMUX_ARGS[@]}"
+curl "${CURL_ARGS[@]}" "$URL" | tee $TEMP | "$BIN_DIR/$DEMUX_BIN" "${DEMUX_ARGS[@]}"
 
 echo ""
 echo "hcmapfetch: complete"
@@ -240,9 +254,9 @@ ls -lh "$DAY_OUT" "$NIGHT_OUT" 2>/dev/null || true
 
 if [[ -n "$CURL"  ]]; then
     echo "spliting curl output"
-    cat $TEMP | ./splitcurl $CURL
+    cat $TEMP | "$BIN_DIR/$SPLIT_BIN" $CURL
     cp $TEMP $CURL.raw
-	echo "created $CURL.raw $CURL.txt  $CURL.bin"
+    echo "created $CURL.raw $CURL.txt  $CURL.bin"
 fi
 
 rm $TEMP
